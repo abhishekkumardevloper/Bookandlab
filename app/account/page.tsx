@@ -1,12 +1,14 @@
 import { AccountSettings } from "@stackframe/stack";
 import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { stackServerApp } from "@/lib/auth/stack";
+import { isStackAuthEnabled, stackServerApp } from "@/lib/auth/stack";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 export default async function AccountPage() {
-  if (!stackServerApp) {
+  // Resolved conflict: Check both the feature flag and the app instance 
+  // to prevent crashes on the next line.
+  if (!isStackAuthEnabled || !stackServerApp) {
     redirect("/");
   }
 
