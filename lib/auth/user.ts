@@ -2,6 +2,8 @@ import { stackServerApp } from "@/lib/auth/stack";
 import { createAdminClient } from "@/lib/db/supabase";
 
 export async function getDbUser() {
+  if (!stackServerApp) return null;
+
   const stackUser = await stackServerApp.getUser();
   if (!stackUser) return null;
 

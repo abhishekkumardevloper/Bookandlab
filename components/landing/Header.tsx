@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, ChevronDown, User } from "lucide-react";
+import { Menu, X, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function Header({ user, role }: { user: any | null, role?: string | null }) {
@@ -24,11 +24,11 @@ export function Header({ user, role }: { user: any | null, role?: string | null 
   };
 
   const navLinks = [
-    { name: "Programs", href: "#programs" },
-    { name: "Mentors", href: "#mentors" },
-    { name: "Learning Model", href: "#learning-model" },
-    { name: "Community", href: "#community" },
-    { name: "Pricing", href: "#pricing" },
+    { name: "Programs", href: "/programs" },
+    { name: "Mentors", href: "/mentors" },
+    { name: "Learning Model", href: "/learning-model" },
+    { name: "Community", href: "/community" },
+    { name: "Pricing", href: "/pricing" },
   ];
 
   return (

@@ -1,14 +1,23 @@
 import { requireRole } from "@/lib/rbac/roles";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { 
-  LayoutDashboard, BookOpen, Star, Settings, 
-  Bell, GraduationCap, Trophy, LogOut 
+import {
+  LayoutDashboard,
+  BookOpen,
+  Star,
+  Settings,
+  Bell,
+  GraduationCap,
+  Trophy,
+  LogOut,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/shared/DashboardHeader";
 import { getUserNotifications, getUnreadCount } from "@/lib/services/notifications";
 import { getStudentGamification } from "@/lib/services/student";
 import { MobileNav } from "@/components/shared/MobileNav";
+
+export const dynamic = "force-dynamic";
+
 
 const NAV_ITEMS = [
   { href: "/student/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
@@ -135,7 +144,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
 
         {/* Logout (Subtle) */}
         <div className="px-4 pb-6 pt-2">
-           <Link href="/logout" className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-rose-400/70 hover:text-rose-400 transition-colors group">
+           <Link href="/handler/sign-out" className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-rose-400/70 hover:text-rose-400 transition-colors group">
              <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
              Logout
            </Link>

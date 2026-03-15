@@ -6,6 +6,8 @@ import { DashboardHeader } from "@/components/shared/DashboardHeader";
 import { getUserNotifications, getUnreadCount } from "@/lib/services/notifications";
 import { MobileNav } from "@/components/shared/MobileNav";
 
+export const dynamic = "force-dynamic";
+
 const NAV_ITEMS = [
   { href: "/mentor/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
   { href: "/mentor/pending", label: "Pending Reviews", icon: "Clock" },
