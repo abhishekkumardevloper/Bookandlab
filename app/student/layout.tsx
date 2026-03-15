@@ -1,14 +1,23 @@
 import { requireRole } from "@/lib/rbac/roles";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { 
-  LayoutDashboard, BookOpen, Star, Settings, 
-  Bell, GraduationCap, Trophy, LogOut 
+import {
+  LayoutDashboard,
+  BookOpen,
+  Star,
+  Settings,
+  Bell,
+  GraduationCap,
+  Trophy,
+  LogOut,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/shared/DashboardHeader";
 import { getUserNotifications, getUnreadCount } from "@/lib/services/notifications";
 import { getStudentGamification } from "@/lib/services/student";
 import { MobileNav } from "@/components/shared/MobileNav";
+
+export const dynamic = "force-dynamic";
+
 
 const NAV_ITEMS = [
   { href: "/student/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
