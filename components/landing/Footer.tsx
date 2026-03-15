@@ -47,14 +47,19 @@ export function Footer() {
            <div className="lg:col-span-2 lg:pl-8">
              <h4 className="text-white font-bold tracking-wider uppercase mb-6 text-xs">Platform</h4>
              <ul className="space-y-4">
-               {['How it Works', 'Learning Model', 'Pricing & Plans', 'For Schools'].map((item) => (
-                 <li key={item}>
-                   <Link href={`#${item.toLowerCase().replace(/ /g, '-')}`} className="text-slate-400 hover:text-indigo-400 transition-colors text-sm font-medium flex items-center gap-2 group">
-                     <span className="w-0 overflow-hidden group-hover:w-2 transition-all duration-300"><ArrowRight size={10} /></span>
-                     {item}
-                   </Link>
-                 </li>
-               ))}
+               {[
+               { label: 'How it Works', href: '/#how-it-works' },
+               { label: 'Learning Model', href: '/learning-model' },
+               { label: 'Pricing & Plans', href: '/pricing' },
+               { label: 'Mentors', href: '/mentors' },
+             ].map((item) => (
+               <li key={item.label}>
+                 <Link href={item.href} className="text-slate-400 hover:text-indigo-400 transition-colors text-sm font-medium flex items-center gap-2 group">
+                   <span className="w-0 overflow-hidden group-hover:w-2 transition-all duration-300"><ArrowRight size={10} /></span>
+                   {item.label}
+                 </Link>
+               </li>
+             ))}
              </ul>
            </div>
 
@@ -62,14 +67,19 @@ export function Footer() {
            <div className="lg:col-span-2">
              <h4 className="text-white font-bold tracking-wider uppercase mb-6 text-xs">Support</h4>
              <ul className="space-y-4">
-               {['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Contact Support'].map((item) => (
-                 <li key={item}>
-                   <Link href="#" className="text-slate-400 hover:text-indigo-400 transition-colors text-sm font-medium flex items-center gap-2 group">
-                      <span className="w-0 overflow-hidden group-hover:w-2 transition-all duration-300"><ArrowRight size={10} /></span>
-                      {item}
-                   </Link>
-                 </li>
-               ))}
+               {[
+               { label: 'Contact Support', href: 'mailto:support@bookandlab.com' },
+               { label: 'Parent Community', href: '/community' },
+               { label: 'Programs', href: '/programs' },
+               { label: 'Account', href: '/account' },
+             ].map((item) => (
+               <li key={item.label}>
+                 <Link href={item.href} className="text-slate-400 hover:text-indigo-400 transition-colors text-sm font-medium flex items-center gap-2 group">
+                    <span className="w-0 overflow-hidden group-hover:w-2 transition-all duration-300"><ArrowRight size={10} /></span>
+                    {item.label}
+                 </Link>
+               </li>
+             ))}
              </ul>
            </div>
 
