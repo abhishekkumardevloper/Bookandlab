@@ -6,7 +6,9 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 export default async function AccountPage() {
-  if (!isStackAuthEnabled) {
+  // Resolved conflict: Check both the feature flag and the app instance 
+  // to prevent crashes on the next line.
+  if (!isStackAuthEnabled || !stackServerApp) {
     redirect("/");
   }
 

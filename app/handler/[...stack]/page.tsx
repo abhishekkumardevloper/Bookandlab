@@ -4,7 +4,8 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 export default function Handler(props: any) {
-  if (!isStackAuthEnabled) {
+  // Resolved conflict: Redirect if auth is disabled OR the app instance is missing
+  if (!isStackAuthEnabled || !stackServerApp) {
     redirect("/");
   }
 
