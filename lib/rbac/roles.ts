@@ -24,9 +24,9 @@ export async function getDbUser() {
 }
 
 // Fetches the current user's role without enforcing a redirect
-// (This fixes the Turbopack build error)
-export async function getActiveRole(): Promise<Role | null> {
-  const user = await getDbUser();
+// Accepts an optional user object to prevent fetching the database twice
+export async function getActiveRole(providedUser?: any): Promise<Role | null> {
+  const user = providedUser || await getDbUser();
   if (!user || !user.role) {
     return null;
   }
