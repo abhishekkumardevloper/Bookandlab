@@ -4,7 +4,9 @@ import { UnitManagementClient } from "@/components/admin/UnitManagementClient";
 import { FolderTree } from "lucide-react";
 
 export default async function AdminUnitsPage() {
+  // 🛑 THE BOUNCER: This is what is kicking you out to the student page!
   await requireRole(["ADMIN"]);
+  
   const supabase = await createAdminClient();
   
   const { data: units } = await supabase
