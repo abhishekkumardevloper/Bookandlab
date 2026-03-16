@@ -5,7 +5,7 @@ export async function getDbUser() {
   if (!stackServerApp) return null;
 
   const stackUser = await stackServerApp.getUser();
-  if (!stackUser) return null;
+  if (!stackUser) return null; // If this returns null, your Vercel Environment Variables are missing!
 
   // Multi-Tenancy extraction: users MUST have an active team context
   const selectedTeam = stackUser.selectedTeam;
@@ -16,12 +16,12 @@ export async function getDbUser() {
   const supabase = await createAdminClient();
 
   // Upsert user securely bypassing RLS (using Admin Client)
-  // StackAuth is source of truth, ensure it's synced.
+  // FIX: Changed .single() to .maybeSingle() to prevent crash on first-time login
   const { data: existingUser } = await supabase
     .from('users')
     .select('*')
     .eq('id', stackUser.id)
-    .single();
+    .maybeSingle();
 
   if (existingUser) {
     // 1. Soft-disable security check
@@ -42,7 +42,7 @@ export async function getDbUser() {
         })
         .eq('id', stackUser.id)
         .select()
-        .single();
+        .single(); // Safe to use single() here because we know we just updated an existing row
       
       // Ensure role exists for the new team if team changed
       await ensureUserRole(supabase, stackUser.id, teamId);
@@ -83,13 +83,13 @@ export async function getDbUser() {
  * Role assignments default strictly to "STUDENT" upon first login per team.
  */
 async function ensureUserRole(supabase: any, userId: string, teamId: string) {
-  // First check if user_role mapping exists
+  // FIX: Changed .single() to .maybeSingle() 
   const { data: existingMapping } = await supabase
     .from('user_roles')
     .select('id')
     .eq('user_id', userId)
     .eq('team_id', teamId)
-    .single();
+    .maybeSingle();
     
   if (existingMapping) return; // Already safely mapped
   
@@ -98,7 +98,7 @@ async function ensureUserRole(supabase: any, userId: string, teamId: string) {
     .from('roles')
     .select('id')
     .eq('name', 'STUDENT')
-    .single();
+    .maybeSingle();
     
   if (!baseRole) {
     console.error("Critical System Integrity Error: Failed to find base STUDENT role. Did you run the multi_tenancy migration?");
