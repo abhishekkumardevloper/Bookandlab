@@ -1,65 +1,64 @@
-import { getDbUser } from "@/lib/auth/user";
+import { redirect } from "next/navigation";
+import { stackServerApp } from "@/lib/auth/stack";
+import { createAdminClient } from "@/lib/db/supabase";
 
-export type Role = "STUDENT" | "MENTOR" | "ADMIN";
+export type Role = "STUDENT" | "MENTOR" | "ADMIN" | "TEACHER";
 
-type AuthenticatedUser = Awaited<ReturnType<typeof getDbUser>>;
-type UserWithRole = NonNullable<AuthenticatedUser> & { role: Role };
-type RoleJoin = { name: Role } | { name: Role }[];
+// Reusable function to get the current authenticated user and their DB profile
+export async function getDbUser() {
+  if (!stackServerApp) return null;
+  
+  const authUser = await stackServerApp.getUser();
+  if (!authUser) return null;
 
-function resolveRoleFromJoin(roleJoin: RoleJoin | null | undefined): Role | null {
-  if (!roleJoin) return null;
-  const roleName = Array.isArray(roleJoin) ? roleJoin[0]?.name : roleJoin.name;
-  return roleName ?? null;
+  const supabase = await createAdminClient();
+  
+  // Fetch the user's profile which contains their role
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", authUser.id)
+    .maybeSingle();
+
+  return profile;
 }
 
+// Protects routes that just need ANY logged-in user
 export async function requireAuth() {
   const user = await getDbUser();
   if (!user) {
-    throw new Error("UNAUTHORIZED");
+    redirect("/handler/sign-in");
   }
   return user;
 }
 
-export async function getActiveRole(user: NonNullable<AuthenticatedUser>): Promise<Role | null> {
-  const { createAdminClient } = await import("@/lib/db/supabase");
-  const supabase = await createAdminClient();
-
-  const { data: roleData, error } = await supabase
-    .from("user_roles")
-    .select("roles(name)")
-    .eq("user_id", user.id)
-    .eq("team_id", user.team_id)
-    .single();
-
-  if (error || !roleData) {
-    return null;
-  }
-
-  return resolveRoleFromJoin(roleData.roles as RoleJoin | undefined);
-}
-
-export async function requireRole(allowedRoles: Role[]): Promise<UserWithRole> {
+// Protects routes that need specific roles
+export async function requireRole(allowedRoles: Role[]) {
   const user = await requireAuth();
-  const activeRoleName = await getActiveRole(user);
 
-  if (!activeRoleName) {
-    console.error("Role resolution failed for user:", user.id);
-    throw new Error("FORBIDDEN: No active role mapping for this team context.");
+  // THE BOUNCER LOGIC: If user's role is not in the allowed list, redirect them!
+  if (!user.role || !allowedRoles.includes(user.role as Role)) {
+    console.warn(`Access Denied: User has role ${user.role}, but route requires ${allowedRoles}`);
+    
+    // Send them to their appropriate dashboard based on their ACTUAL role
+    if (user.role === "ADMIN") {
+      redirect("/admin/units"); // Or your admin home
+    } else if (user.role === "TEACHER" || user.role === "MENTOR") {
+      redirect("/teacher/dashboard");
+    } else {
+      // Default fallback (Student)
+      redirect("/dashboard"); 
+    }
   }
 
-  if (!allowedRoles.includes(activeRoleName)) {
-    throw new Error("FORBIDDEN: Insufficient permissions for " + activeRoleName);
-  }
-
-  return { ...user, role: activeRoleName };
+  return { ...user, role: user.role as Role };
 }
 
+// Protects routes that require a paid subscription
 export async function requireActiveSubscription() {
   const user = await requireRole(["STUDENT"]);
 
-  const { createAdminClient } = await import("@/lib/db/supabase");
   const supabase = await createAdminClient();
-
   const { data: sub } = await supabase
     .from("subscriptions")
     .select("status, current_period_end")
@@ -73,9 +72,10 @@ export async function requireActiveSubscription() {
   return { user, subscription: sub };
 }
 
+// Helper for Server Actions
 export function createProtectedAction<T, TPayload = FormData>(
   allowedRoles: Role[],
-  action: (user: UserWithRole, payload: TPayload) => Promise<T>
+  action: (user: any, payload: TPayload) => Promise<T>
 ) {
   return async (payload: TPayload): Promise<T> => {
     const user = await requireRole(allowedRoles);

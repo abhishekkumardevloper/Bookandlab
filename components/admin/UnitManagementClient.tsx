@@ -10,14 +10,9 @@ type Unit = {
   name: string;
   subject_id?: string;
   sequence_order: number;
-  subjects?: { name: string } | { name: string }[];
+  // Resolved conflict: Kept this as a strict object, since we formatted it on the server
+  subjects?: { name: string };
 };
-
-
-function getSubjectName(subjects: Unit["subjects"]) {
-  if (!subjects) return "—";
-  return Array.isArray(subjects) ? subjects[0]?.name || "—" : subjects.name;
-}
 
 export function UnitManagementClient({ initialUnits, subjects }: { initialUnits: Unit[]; subjects: Subject[] }) {
   const [units, setUnits] = useState(initialUnits);
@@ -172,7 +167,8 @@ export function UnitManagementClient({ initialUnits, subjects }: { initialUnits:
                     ) : (
                       <>
                         <td className="p-4 font-semibold text-slate-800">{u.name}</td>
-                        <td className="p-4 text-slate-600">{getSubjectName(u.subjects)}</td>
+                        {/* Resolved conflict: Render the subject name safely using optional chaining */}
+                        <td className="p-4 text-slate-600">{u.subjects?.name || "—"}</td>
                         <td className="p-4 text-slate-500">{u.sequence_order}</td>
                         <td className="p-4">
                           <div className="flex gap-1">
