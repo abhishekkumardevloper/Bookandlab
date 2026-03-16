@@ -23,6 +23,16 @@ export async function getDbUser() {
   return profile;
 }
 
+// Fetches the current user's role without enforcing a redirect
+// (This fixes the Turbopack build error)
+export async function getActiveRole(): Promise<Role | null> {
+  const user = await getDbUser();
+  if (!user || !user.role) {
+    return null;
+  }
+  return user.role as Role;
+}
+
 // Protects routes that just need ANY logged-in user
 export async function requireAuth() {
   const user = await getDbUser();
