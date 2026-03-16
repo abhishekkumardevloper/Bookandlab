@@ -102,6 +102,39 @@ export const deleteSubjectAction = createProtectedAction(
   }
 );
 
+/** Update Subject */
+export const updateSubjectAction = createProtectedAction(
+  ["ADMIN"],
+  async (user, formData: FormData) => {
+    const subjectId = formData.get("subjectId") as string;
+    const name = formData.get("name") as string;
+    const classLevel = formData.get("classLevel") as string;
+    const description = (formData.get("description") as string) || "";
+
+    if (!subjectId) throw new Error("Subject ID required.");
+    if (!name || !classLevel) throw new Error("Name and class level are required.");
+
+    const supabase = await createAdminClient();
+    const { error } = await supabase
+      .from("subjects")
+      .update({ name, class_level: classLevel, description })
+      .eq("id", subjectId);
+
+    if (error) throw new Error("Failed to update subject: " + error.message);
+
+    await supabase.from("audit_logs").insert({
+      team_id: user.team_id,
+      actor_id: user.id,
+      action_type: "SUBJECT_UPDATED",
+      target_id: subjectId,
+      details: { name, classLevel },
+    });
+
+    revalidatePath("/admin/subjects");
+    return { success: true };
+  }
+);
+
 /** Delete Unit */
 export const deleteUnitAction = createProtectedAction(
   ["ADMIN"],
@@ -111,6 +144,39 @@ export const deleteUnitAction = createProtectedAction(
     const supabase = await createAdminClient();
     await supabase.from("units").delete().eq("id", unitId);
     await supabase.from("audit_logs").insert({ team_id: user.team_id, actor_id: user.id, action_type: "UNIT_DELETED", target_id: unitId });
+    revalidatePath("/admin/units");
+    return { success: true };
+  }
+);
+
+/** Update Unit */
+export const updateUnitAction = createProtectedAction(
+  ["ADMIN"],
+  async (user, formData: FormData) => {
+    const unitId = formData.get("unitId") as string;
+    const name = formData.get("name") as string;
+    const subjectId = formData.get("subjectId") as string;
+    const sequenceOrder = parseInt((formData.get("sequenceOrder") as string) || "1");
+
+    if (!unitId) throw new Error("Unit ID required.");
+    if (!name || !subjectId) throw new Error("Name and subject are required.");
+
+    const supabase = await createAdminClient();
+    const { error } = await supabase
+      .from("units")
+      .update({ name, subject_id: subjectId, sequence_order: sequenceOrder })
+      .eq("id", unitId);
+
+    if (error) throw new Error("Failed to update unit: " + error.message);
+
+    await supabase.from("audit_logs").insert({
+      team_id: user.team_id,
+      actor_id: user.id,
+      action_type: "UNIT_UPDATED",
+      target_id: unitId,
+      details: { name, subjectId, sequenceOrder },
+    });
+
     revalidatePath("/admin/units");
     return { success: true };
   }
