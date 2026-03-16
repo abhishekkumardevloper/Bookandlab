@@ -35,9 +35,11 @@ const ICON_MAP: Record<string, any> = {
 };
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireRole(["STUDENT"]);
-  if (!user) redirect("/403");
+const user = await requireRole(["STUDENT"]);
 
+if (user.role !== "STUDENT") {
+  redirect("/admin/dashboard");
+}
   // Fetch notifications for the header
   const initialNotifications = await getUserNotifications(user.id, user.team_id, 5);
   const initialUnreadCount = await getUnreadCount(user.id, user.team_id);
