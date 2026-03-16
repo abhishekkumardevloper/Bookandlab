@@ -1,13 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { createUnitAction, deleteUnitAction } from "@/lib/actions/curriculum";
-import { Loader2, Plus, Trash2, FolderTree } from "lucide-react";
+import { createUnitAction, deleteUnitAction, updateUnitAction } from "@/lib/actions/curriculum";
+import { Loader2, Plus, Trash2, FolderTree, Pencil, X } from "lucide-react";
 
-export function UnitManagementClient({ initialUnits, subjects }: { initialUnits: any[]; subjects: any[] }) {
+type Subject = { id: string; name: string; class_level: string };
+type Unit = {
+  id: string;
+  name: string;
+  subject_id?: string;
+  sequence_order: number;
+  subjects?: { name: string } | { name: string }[];
+};
+
+
+function getSubjectName(subjects: Unit["subjects"]) {
+  if (!subjects) return "—";
+  return Array.isArray(subjects) ? subjects[0]?.name || "—" : subjects.name;
+}
+
+export function UnitManagementClient({ initialUnits, subjects }: { initialUnits: Unit[]; subjects: Subject[] }) {
   const [units, setUnits] = useState(initialUnits);
   const [isCreating, setIsCreating] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
+  const [isSavingUnit, setIsSavingUnit] = useState(false);
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -15,10 +32,43 @@ export function UnitManagementClient({ initialUnits, subjects }: { initialUnits:
     try {
       await createUnitAction(new FormData(e.currentTarget));
       window.location.reload();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setIsCreating(false);
+    }
+  }
+
+  async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setIsSavingUnit(true);
+    const formData = new FormData(e.currentTarget);
+    try {
+      await updateUnitAction(formData);
+      const unitId = formData.get("unitId") as string;
+      const name = formData.get("name") as string;
+      const subjectId = formData.get("subjectId") as string;
+      const sequenceOrder = parseInt((formData.get("sequenceOrder") as string) || "1");
+      const selectedSubject = subjects.find((s) => s.id === subjectId);
+
+      setUnits((prev) =>
+        prev.map((u) =>
+          u.id === unitId
+            ? {
+                ...u,
+                name,
+                subject_id: subjectId,
+                sequence_order: sequenceOrder,
+                subjects: selectedSubject ? { name: selectedSubject.name } : u.subjects,
+              }
+            : u
+        )
+      );
+      setEditingUnitId(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setIsSavingUnit(false);
     }
   }
 
@@ -28,9 +78,9 @@ export function UnitManagementClient({ initialUnits, subjects }: { initialUnits:
     fd.append("unitId", id);
     try {
       await deleteUnitAction(fd);
-      setUnits(units.filter(u => u.id !== id));
-    } catch (err: any) {
-      alert(err.message);
+      setUnits(units.filter((u) => u.id !== id));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Something went wrong.");
     }
   }
 
@@ -53,7 +103,9 @@ export function UnitManagementClient({ initialUnits, subjects }: { initialUnits:
               <label className="block text-sm font-bold text-slate-700 mb-1">Subject</label>
               <select name="subjectId" required className="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
                 <option value="">Select</option>
-                {subjects.map((s: any) => <option key={s.id} value={s.id}>{s.name} (Class {s.class_level})</option>)}
+                {subjects.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name} (Class {s.class_level})</option>
+                ))}
               </select>
             </div>
             <div>
@@ -80,22 +132,63 @@ export function UnitManagementClient({ initialUnits, subjects }: { initialUnits:
                 <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Unit</th>
                 <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Subject</th>
                 <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Order</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-widest w-20">Actions</th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-widest w-28">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {units.map((u: any) => (
-                <tr key={u.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-4 font-semibold text-slate-800">{u.name}</td>
-                  <td className="p-4 text-slate-600">{u.subjects?.name || "—"}</td>
-                  <td className="p-4 text-slate-500">{u.sequence_order}</td>
-                  <td className="p-4">
-                    <button onClick={() => handleDelete(u.id)} className="text-rose-500 hover:text-rose-700 p-1.5 hover:bg-rose-50 rounded-lg transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {units.map((u) => {
+                const isEditing = editingUnitId === u.id;
+                return (
+                  <tr key={u.id} className="hover:bg-slate-50 transition-colors align-top">
+                    {isEditing ? (
+                      <td colSpan={4} className="p-4">
+                        <form onSubmit={handleUpdate} className="space-y-3">
+                          <input type="hidden" name="unitId" value={u.id} />
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <input name="name" defaultValue={u.name} required className="w-full border border-slate-300 rounded-lg p-2.5 text-sm" />
+                            <select
+                              name="subjectId"
+                              defaultValue={u.subject_id || ""}
+                              required
+                              className="w-full border border-slate-300 rounded-lg p-2.5 text-sm"
+                            >
+                              <option value="" disabled>Select subject</option>
+                              {subjects.map((s) => (
+                                <option key={s.id} value={s.id}>{s.name} (Class {s.class_level})</option>
+                              ))}
+                            </select>
+                            <input name="sequenceOrder" type="number" min="1" defaultValue={u.sequence_order} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm" />
+                          </div>
+                          <div className="flex gap-2 justify-end">
+                            <button type="button" onClick={() => setEditingUnitId(null)} className="px-3 py-2 text-sm rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 flex items-center gap-1">
+                              <X className="w-4 h-4" /> Cancel
+                            </button>
+                            <button type="submit" disabled={isSavingUnit} className="px-3 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50">
+                              {isSavingUnit ? "Saving..." : "Save"}
+                            </button>
+                          </div>
+                        </form>
+                      </td>
+                    ) : (
+                      <>
+                        <td className="p-4 font-semibold text-slate-800">{u.name}</td>
+                        <td className="p-4 text-slate-600">{getSubjectName(u.subjects)}</td>
+                        <td className="p-4 text-slate-500">{u.sequence_order}</td>
+                        <td className="p-4">
+                          <div className="flex gap-1">
+                            <button onClick={() => setEditingUnitId(u.id)} className="text-indigo-500 hover:text-indigo-700 p-1.5 hover:bg-indigo-50 rounded-lg transition-colors">
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDelete(u.id)} className="text-rose-500 hover:text-rose-700 p-1.5 hover:bg-rose-50 rounded-lg transition-colors">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

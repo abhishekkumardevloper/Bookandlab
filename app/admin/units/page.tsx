@@ -9,7 +9,7 @@ export default async function AdminUnitsPage() {
   
   const { data: units } = await supabase
     .from("units")
-    .select("id, name, sequence_order, subjects(name)")
+    .select("id, name, subject_id, sequence_order, subjects(name)")
     .order("sequence_order");
 
   const { data: subjects } = await supabase
